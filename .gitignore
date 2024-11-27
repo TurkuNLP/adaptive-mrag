@@ -1,2 +1,5 @@
 venv-mrag
-
+data
+output
+*.txt
+*.zip
