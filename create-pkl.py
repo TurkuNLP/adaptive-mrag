@@ -33,7 +33,7 @@ model_name = "Salesforce/SFR-Embedding-Mistral"
 tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir, torch_dtype=torch.float16)
 
-news_path = "data/news/"
+news_path = "news/"
 local_scratch = os.environ["LOCAL_SCRATCH"] #if os.environ["LOCAL_SCRATCH"].strip() else "data/"
 news_path = os.path.join(local_scratch, news_path)
 
@@ -50,7 +50,7 @@ for file_path in news_files:
 
     total_docs = len(news_doc_list)
 
-    with open(file_path.replace('.txt', '.pkl').replace('data/news/', ''), "wb") as f:
+    with open(file_path.replace('.txt', '.pkl').replace('news/', ''), "wb") as f:
 
         for doc in tqdm(news_doc_list, desc="Processing documents", total=total_docs):
 
