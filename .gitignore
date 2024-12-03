@@ -1,5 +1,15 @@
 venv-mrag
 data
 output
+stella-output
 *.txt
 *.zip
+*.png
+
+stella-create-pkl.py
+stella-submit-gpu.sh
+stella-test.ipynb
+submit-visuals.sh
+.ipynb_checkpoints/
+Miniconda3-latest-Linux-x86_64.sh
+ziTTPFtm

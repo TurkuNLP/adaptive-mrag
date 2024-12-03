@@ -68,7 +68,9 @@ for file_path in news_files:
 
         # Convert to numpy and store
         all_embeddings.extend(doc_embeddings.cpu().numpy())
-
+        
+    if len(all_embeddings) == 0:
+        continue
     # Save all document embeddings to a pickle file
     output_path = file_path.replace(".txt", ".pkl").replace("news/", "")
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
