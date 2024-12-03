@@ -1,5 +1,7 @@
 venv-mrag
 data
 output
+stella-output
 *.txt
 *.zip
+*.png
