@@ -56,10 +56,21 @@ def visualize_embedding_heads(embeddings, method='tsne', ax=None):
     # Assign 32 unique colors, one for each head
     colors = plt.cm.get_cmap('tab20b', num_heads).colors  # Alternative colormap with 32 options
 
+    cluster_centers = {}
     for head_idx in range(num_heads):
+
         indices = np.arange(head_idx, n_samples * num_heads, num_heads)
+        head_points = reduced_embeddings[indices]
+
         ax.scatter(reduced_embeddings[indices, 0], reduced_embeddings[indices, 1], 
                    color=colors[head_idx], label=f'Head {head_idx+1}', s=1, alpha=0.7)
+        cluster_centers[head_idx] = np.mean(head_points, axis=0)
+
+    # Annotate the plot with head numbers
+    for head_idx, (x, y) in cluster_centers.items():
+        ax.text(x, y, str(head_idx+1), fontsize=8, fontweight='bold', 
+                ha='center', va='center', color='black', 
+                bbox=dict(facecolor='white', alpha=0.6, edgecolor='black'))
 
     ax.set_title(f'Embedding Visualization by Head ({method.upper()})')
     ax.set_xlabel('Component 1')
@@ -248,9 +259,9 @@ print(len(all_embd[0]))
 print(len(all_embd[0][1]))
 
 all_embd = np.concatenate(all_embd, axis=0) # [0][:partition]
-visualize_embedding_heads(all_embd, method='tsne', ax=None)
-visualize_embedding_heads_with_magnitude_shading(all_embd, method='tsne', ax=None)
-heads = [0,12,29]
+#visualize_embedding_heads(all_embd, method='tsne', ax=None)
+#visualize_embedding_heads_with_magnitude_shading(all_embd, method='tsne', ax=None)
+heads = [20,22]
 tops_and_lows = visualize_embedding_specific_heads_with_magnitude_shading(all_embd,heads, method='tsne', ax=None)
 all_txt = np.array(all_txt)
 for head_idx, (top_5, low_5) in enumerate(tops_and_lows):
