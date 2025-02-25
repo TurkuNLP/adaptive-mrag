@@ -3,3 +3,6 @@ data
 output
 *.txt
 *.zip
+
+.ipynb_checkpoints/
+__pycache__/
