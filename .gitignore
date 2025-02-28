@@ -4,4 +4,6 @@ output
 stella-output
 *.txt
 *.zip
-*.png
+
+.ipynb_checkpoints
+__pycache__
