@@ -26,6 +26,7 @@ def batchify_data(data, batch_size):
         yield data[i:i + batch_size]
 
 # Configuration
+output_path_base = "/scratch/project_2000539/maryam/adaptive-mrag/FineWeb-embedd/"
 cache_dir = '/scratch/project_2000539/maryam/embed/.cache'
 batch_size = 64
 max_length = 128
@@ -46,7 +47,6 @@ def main():
     for file in tqdm(dataset, desc="Processing documents", total=len(dataset)):
 
         text = file['text']
-        all_embeddings = []
 
         all_doc_embeddings = []
         # Process documents in batches
@@ -71,25 +71,25 @@ def main():
                 non_padded_embeddings = batch_embeddings[i, non_padded_indices, :]  # Select only non-padded embeddings
                 all_doc_embeddings.append(non_padded_embeddings.cpu())
 
-            # Concatenate all the non-padded tokens for the document
-            all_doc_embeddings = torch.cat(all_doc_embeddings, dim=0)  # (total_seq_length, hidden_size)
+        # Concatenate all the non-padded tokens for the document
+        all_doc_embeddings = torch.cat(all_doc_embeddings, dim=0)  # (total_seq_length, hidden_size)
 
-            # Perform mean pooling over the entire document (averaging over all tokens)
-            doc_attention_mask = torch.ones(all_doc_embeddings.shape[0], dtype=torch.int)  # Full attention for all tokens
-            doc_embeddings = mean_pooling(all_doc_embeddings.unsqueeze(0), doc_attention_mask.unsqueeze(0))  # (1, hidden_size)
+        # Perform mean pooling over the entire document (averaging over all tokens)
+        doc_attention_mask = torch.ones(all_doc_embeddings.shape[0], dtype=torch.int)  # Full attention for all tokens
+        doc_embeddings = mean_pooling(all_doc_embeddings.unsqueeze(0), doc_attention_mask.unsqueeze(0))  # (1, hidden_size)
 
-            # Convert to numpy and store
-            all_embeddings.extend(doc_embeddings.cpu().numpy())
+        # Convert to numpy and store
+        doc_embeddings = doc_embeddings.cpu().numpy()
             
-        if len(all_embeddings) == 0:
+        if len(doc_embeddings) == 0:
             continue
         # Save all document embeddings to a pickle file
         id = ''.join(re.findall(r'[\d-]+', file['id']))
-        output_path = "/scratch/project_2000539/maryam/adaptive-mrag" + id + ".pkl"
+        output_path = output_path_base + id + ".pkl"
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         with open(output_path, "wb") as f:
-            pickle.dump(np.stack(all_embeddings), f)
+            pickle.dump(np.stack(doc_embeddings), f)
 
 
 main()
