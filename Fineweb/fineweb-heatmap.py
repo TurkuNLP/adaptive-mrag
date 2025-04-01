@@ -10,6 +10,7 @@ from collections import Counter
 from torch import Tensor
 from sklearn.metrics.pairwise import cosine_similarity
 from collections import Counter
+from fineweb_topic_groups import topic_cluster_map
 
 # Model and Tokenizer Setup
 model_name = "Salesforce/SFR-Embedding-Mistral"  # Change if needed
@@ -18,8 +19,9 @@ tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir, torch_dtype=torch.float16).cuda()
 
 # Load Dataset
-with open("classified_topics.jsonl", "r", encoding="utf-8") as f:
+with open("data/classified_topics.jsonl", "r", encoding="utf-8") as f:
     dataset = [json.loads(line) for line in f]
+dataset = dataset[:2000]
 for doc in dataset:
     doc["topic"] = doc["topic"].strip().rstrip(',')
 
@@ -65,7 +67,7 @@ output_path_base = "data/FineWeb-embedd/"
 file_counts = 0
 for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
 
-    title = doc["text"]  # Using text as the title since JSONL does not have a separate title field
+    title = doc["topic"]  # Using text as the title since JSONL does not have a separate title field
     file_counts += 1
 
     # Get Title Embeddings (Mean Pooling)
@@ -109,14 +111,31 @@ for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
     #print("all_embd, 2: ", len(flat_embeddings), len(flat_embeddings[0]))
 
     # Compute Cosine Similarity (Title vs. Each Head)
-    similarities = [cosine_similarity(title_embedding, flat_embeddings[i].reshape(1, -1))[0, 0] for i in range(num_heads)]
+    #similarities = [cosine_similarity(title_embedding, flat_embeddings[i].reshape(1, -1))[0, 0] for i in range(num_heads)]
+    similarities = cosine_similarity(title_embedding, flat_embeddings)[0]  # Shape: (n_samples * num_heads,)
     
     cosine_scores.append(similarities)
 
 # Convert to NumPy Array for Visualization
 cosine_scores = np.array(cosine_scores).T  # Shape: (num_heads, num_docs)
 
+# Normalize each head's similarities to [0, 1]
+normalized_scores = []
+
+for head_scores in cosine_scores:
+    min_val = np.min(head_scores)
+    max_val = np.max(head_scores)
+    norm = (head_scores - min_val) / (max_val - min_val + 1e-9)  # Avoid division by zero
+    normalized_scores.append(norm)
+
+# Convert back to NumPy array
+#cosine_scores = np.array(normalized_scores)  # Still (num_heads, num_docs)
+
+#cosine_scores_normalized = (cosine_scores - cosine_scores.min(axis=1, keepdims=True)) / \
+#                           (cosine_scores.max(axis=1, keepdims=True) - cosine_scores.min(axis=1, keepdims=True) + 1e-9)
+
 # Count how many docs per topic (in order of appearance)
+#topic_order = [topic_cluster_map.get(doc["topic"], "Other") for doc in dataset[:total_docs]]
 topic_order = [doc["topic"] for doc in dataset[:total_docs]]
 topic_counts = Counter(topic_order)
 topic_boundaries = []
@@ -133,7 +152,7 @@ for topic, count in topic_counts.items():
     topic_boundaries.append(tick_position)
 
 # Plot heatmap
-plt.figure(figsize=(20, 10))
+plt.figure(figsize=(20, 10)) # cmap="Reds"
 sns.heatmap(cosine_scores, cmap="coolwarm", xticklabels=docs_per_category, yticklabels=[f"Head {i+1}" for i in range(num_heads)])
 
 # Custom x-ticks in the middle of each topic group
