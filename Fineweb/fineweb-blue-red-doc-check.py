@@ -135,48 +135,33 @@ for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
 # Convert to NumPy Array for Visualization
 cosine_scores = np.array(cosine_scores).T  # Shape: (num_heads, num_docs)
 
-# Normalize each head's similarities to [0, 1]
-normalized_scores = []
+# Target topic
+target_topic = "14.Politics, Conflict, International"
 
-for head_scores in cosine_scores:
-    min_val = np.min(head_scores)
-    max_val = np.max(head_scores)
-    norm = (head_scores - min_val) / (max_val - min_val + 1e-9)  # Avoid division by zero
-    normalized_scores.append(norm)
+# Find indices of documents belonging to the target topic
+target_indices = [i for i, doc in enumerate(dataset[:total_docs]) if doc["topic"] == target_topic]
 
-# Count how many docs per topic (in order of appearance)
-topic_order = [doc["topic"] for doc in dataset[:total_docs]]
-topic_counts = Counter(topic_order)
-topic_boundaries = []
+# Helper to get top/bottom ids for a given head
+def print_extremes_for_head(head_index):
+    print(f"\nHead {head_index} — Top & Bottom 5 cosine similarities for topic: '{target_topic}'")
 
-# Preserve order and build x_labels
-x_ticks = []
-tick_position = 0
+    # Get cosine scores for that head and only for the target topic indices
+    scores = cosine_scores[head_index, target_indices]
 
-for topic, count in topic_counts.items():
-    if count < 10:
-        break
-    x_ticks.append((tick_position + count // 2, f"{topic} ({count})"))
-    tick_position += count
-    topic_boundaries.append(tick_position)
+    # Sort by similarity
+    sorted_indices = np.argsort(scores)
 
-# Plot heatmap
-plt.figure(figsize=(20, 10)) # cmap="Reds"
-sns.heatmap(cosine_scores, cmap="coolwarm", yticklabels=[f"Head {i}" for i in range(num_heads + 1)])
+    # Get original dataset indices from sorted positions
+    top_5 = [target_indices[i] for i in sorted_indices[-5:][::-1]]  # Highest
+    bottom_5 = [target_indices[i] for i in sorted_indices[:5]]      # Lowest
 
-# Custom x-ticks in the middle of each topic group
-positions, labels = zip(*x_ticks)
-plt.xticks(positions, labels, rotation=90, fontsize=8)
+    print("Top 5 (highest similarity):")
+    for idx in top_5:
+        print(f"Doc ID: {dataset[idx]['id']}, Similarity: {cosine_scores[head_index, idx]:.4f}")
 
-# Draw vertical lines at topic boundaries
-for boundary in topic_boundaries[:-1]:  # skip last one to avoid line at far right edge
-    plt.axvline(x=boundary, color='black', linestyle='--', linewidth=0.5)
+    print("\nBottom 5 (lowest similarity):")
+    for idx in bottom_5:
+        print(f"Doc ID: {dataset[idx]['id']}, Similarity: {cosine_scores[head_index, idx]:.4f}")
 
-plt.xlabel("Documents (Grouped by Category)")
-plt.ylabel("Vector Embedding Heads")
-plt.title("Heatmap of Cosine Similarity Between Title and Text Attention Heads")
-
-# Show plot
-plt.savefig("fineweb_heatmap_topics.png", dpi=300, bbox_inches="tight")
-plt.show()
-plt.close()
+# Print for head 10 and 19
+print_extremes_for_head(18)

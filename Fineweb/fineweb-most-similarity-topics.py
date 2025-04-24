@@ -3,7 +3,7 @@ import torch
 import json
 import pickle
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import matplotlib.pyplot as plt
@@ -30,21 +30,46 @@ def get_embeddings(text):
         outputs = model(**inputs)
     return last_token_pool(outputs.last_hidden_state, inputs['attention_mask']).cpu().numpy()
 
+def clean_label(label):
+    # 1. Replace any comma between number and text with a dot
+    label = re.sub(r'^(\d+)[,.]', r'\1.', label.strip())
+
+    # 2. Remove everything after the presence of a second number
+    #    e.g., "1. Technology 2. Gaming" -> "1. Technology"
+    match = re.match(r'^(\d+\.\s*[^0-9]*)', label)
+    if match:
+        label = match.group(1).strip()
+
+    # 3. Remove any trailing punctuation like comma or period
+    label = re.sub(r'[,.]\s*$', '', label)
+
+    # 4. Make sure only the first dot remains (fix cases like 1.. Technology)
+    label = re.sub(r'^(\d+)\.+', r'\1.', label)
+
+    # 5. Remove extra whitespace around the dot and category
+    label = re.sub(r'\s*\.\s*', '.', label)
+    label = re.sub(r'\s+', ' ', label)
+
+    return label.strip()
 
 # === Load Dataset ===
 dataset = []
-with open("data/classified_topics.jsonl", "r", encoding="utf-8") as f:
+with open("data/classified_topics_narrowed.jsonl", "r", encoding="utf-8") as f:
     dataset = [json.loads(line) for line in f]
 
-dataset = dataset[:1000]  # Adjust if needed
 for doc in dataset:
-    parts = doc["topic"].strip().rstrip('.').split(',')
-    doc["topic"] = ','.join(parts[:3]).strip()
+    doc["topic"] = clean_label(doc["topic"])
 
 # === Precompute Topic Embeddings (pooled vector) ===
 unique_topics = sorted(set(doc["topic"] for doc in dataset))
-topic_embeddings = {}
 
+# Keep only up to 120 docs per topic
+max_per_topic = 120
+topic_seen = defaultdict(int)
+dataset = [doc for doc in dataset if topic_seen[doc["topic"]] <
+           max_per_topic and not topic_seen.__setitem__(doc["topic"], topic_seen[doc["topic"]] + 1)]
+
+topic_embeddings = {}
 for topic in unique_topics:
     topic_embeddings[topic] = get_embeddings(topic)  # shape: (1, hidden_size)
 
@@ -184,4 +209,3 @@ for ex in not_in_top10_examples:
     print(f"True Topic: {ex['true_topic']}")
     print(f"Top-10 Predicted Topics: {ex['top10']}")
     print("—" * 40)
-

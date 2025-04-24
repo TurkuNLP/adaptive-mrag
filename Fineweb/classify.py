@@ -3,20 +3,23 @@ import json
 import openai
 import csv
 from datasets import load_from_disk
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # OpenAI API key (set this up securely, e.g., using environment variables)
-client = openai.Client(api_key="###")
+client = openai.Client(api_key=os.environ["OPENAI_API_KEY"])
 
 # Load dataset
 dataset = load_from_disk("/scratch/project_2000539/maryam/fineweb_dataset")
 
 # Load category list
-categories_file = "categories-narrowed.txt"
+categories_file = "images-txts/FineWeb/categories-narrowed.txt"
 with open(categories_file, "r", encoding="utf-8") as f:
     categories = [line.strip() for line in f.readlines()]
 
 # Output storage (adjust as needed)
-output_file = "classified_topics.jsonl"
+output_file = "classified_topics_narrowed.jsonl"
 
 def classify_text(text):
     """Send text to OpenAI and get the best matching category."""
@@ -27,7 +30,7 @@ def classify_text(text):
     ""
     Choose the most suitable category from the following numbered list:  {', '.join(categories)}. 
     Respond with the full entry exactly as written, including its number and commas. 
-    Do not create new categories.
+    Do not create new categories. Do not change the format.
     """
 
     try:
@@ -45,7 +48,7 @@ def classify_text(text):
 # Process dataset and classify topics
 classified_data = []
 count = 0
-for file_index in range(1000,len(dataset)):
+for file_index in range(0,len(dataset)):
     text = dataset[file_index]['text']
     doc_id = dataset[file_index].get('id', file_index)  # Store ID if available
     topic = classify_text(text)

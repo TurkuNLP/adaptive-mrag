@@ -1,0 +1,29 @@
+Head 10 — Top & Bottom 5 cosine similarities for topic: '1.Business, Finance, Law'
+Top 5 (highest similarity):
+Doc ID: <urn:uuid:c2fa98c0-af63-4bcd-99f1-1ad8929efdff>, Similarity: 0.1339
+Doc ID: <urn:uuid:041772aa-f4ca-4850-800f-b3ff4bbb2106>, Similarity: 0.0970
+Doc ID: <urn:uuid:a1c190ae-2d7f-4705-b272-54adb08ae6de>, Similarity: 0.0943
+Doc ID: <urn:uuid:2e95b1a5-90d5-4898-b59b-dbbe522955bc>, Similarity: 0.0892
+Doc ID: <urn:uuid:c5d3e95b-4e1e-4901-95e8-6a69476ed9d2>, Similarity: 0.0843
+
+Bottom 5 (lowest similarity):
+Doc ID: <urn:uuid:c6d0010d-0709-4da2-a814-7c4150c82072>, Similarity: -0.0712
+Doc ID: <urn:uuid:17a33de9-fa6f-4f00-b522-7397d63ab1bf>, Similarity: -0.0673
+Doc ID: <urn:uuid:592e5b12-dc7f-4632-ab07-b45b84c9fdef>, Similarity: -0.0667
+Doc ID: <urn:uuid:43136def-3b8a-4e1b-9041-de10388ee2a6>, Similarity: -0.0652
+Doc ID: <urn:uuid:338fb927-f6d5-4aa2-945c-faa332f213fb>, Similarity: -0.0600
+
+Head 19 — Top & Bottom 5 cosine similarities for topic: '1.Business, Finance, Law'
+Top 5 (highest similarity):
+Doc ID: <urn:uuid:082f48a5-1344-4f45-9dd4-8d2ea570c0fd>, Similarity: 0.0673
+Doc ID: <urn:uuid:932ecf94-63d7-4df2-8af2-d0675f8f8aa1>, Similarity: 0.0501
+Doc ID: <urn:uuid:98684aa0-5fa6-46cb-9771-d5d379f01256>, Similarity: 0.0262
+Doc ID: <urn:uuid:d2230ae4-7331-439b-bcd2-47a27e3cc580>, Similarity: 0.0239
+Doc ID: <urn:uuid:abbf61da-df5d-4c3d-8886-b08c9ee983ad>, Similarity: 0.0189
+
+Bottom 5 (lowest similarity):
+Doc ID: <urn:uuid:227473e1-1e05-4c89-a8f3-02a55d10d784>, Similarity: -0.1135
+Doc ID: <urn:uuid:6f0cf19a-4e61-447d-91fd-d091000ab804>, Similarity: -0.1052
+Doc ID: <urn:uuid:d11ac37e-dba0-4bdb-ab32-31ff10801d05>, Similarity: -0.0925
+Doc ID: <urn:uuid:9a3473af-1c74-48de-888f-cfeac4c2b285>, Similarity: -0.0858
+Doc ID: <urn:uuid:1120c417-903c-4b4e-b02c-e7631dae1527>, Similarity: -0.0844

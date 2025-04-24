@@ -27,17 +27,22 @@ def get_embeddings(text):
     with torch.no_grad():
         outputs = model(**inputs)
     return last_token_pool(outputs.last_hidden_state, inputs['attention_mask']).cpu().numpy()
-
+"""
 # === Load and Clean Topics ===
 with open("data/classified_topics.jsonl", "r", encoding="utf-8") as f:
-    dataset = [json.loads(line) for line in f]
+    dataset = [json.loads(line) for line in f]"""
 
 # Extract cleaned unique topics
 cleaned_topics = set()
+
+with open("images-txts/FineWeb/categories-narrowed.txt", "r", encoding="utf-8") as f:
+    for line in f:
+        cleaned_topics.add(line.strip())
+"""
 for doc in dataset:
     parts = doc["topic"].rstrip('.').strip().split(',')
     cleaned = ','.join(parts[:3]).strip()
-    cleaned_topics.add(cleaned)
+    cleaned_topics.add(cleaned)"""
     
 topic_names = sorted(cleaned_topics)
 
