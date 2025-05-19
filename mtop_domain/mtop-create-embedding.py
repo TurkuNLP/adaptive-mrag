@@ -26,7 +26,7 @@ def batchify_data(data, batch_size):
         yield data[i:i + batch_size]
 
 # Configuration
-output_path_base = "/scratch/project_2000539/maryam/adaptive-mrag/FineWeb-embedd-modified/"
+output_path_base = "/scratch/project_2000539/maryam/adaptive-mrag/data/mtop_domain/de/"
 cache_dir = '/scratch/project_2000539/maryam/embed/.cache'
 batch_size = 64
 max_length = 128
@@ -35,24 +35,18 @@ max_length = 128
 model_name = "Salesforce/SFR-Embedding-Mistral" #"dunzhang/stella_en_1.5B_v5"
 tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir, torch_dtype=torch.float16).cuda()
-model.layers[-1].self_attn.o_proj = torch.nn.Identity()
 
 # Set environment variable to suppress warnings
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 def main():
 
-    dataset = load_from_disk("/scratch/project_2000539/maryam/fineweb_dataset")
-    number_of_doc = 0
-
+    dataset = load_from_disk("/scratch/project_2000539/maryam/mtop_domain/de")
+    
     # Process files
     for file in tqdm(dataset, desc="Processing documents", total=len(dataset)):
 
-        if number_of_doc > 4000:
-            break
-
         text = file['text']
-        number_of_doc += 1
 
         all_doc_embeddings = []
         # Process documents in batches
@@ -90,8 +84,7 @@ def main():
         if len(doc_embeddings) == 0:
             continue
         # Save all document embeddings to a pickle file
-        id = ''.join(re.findall(r'[\d-]+', file['id']))
-        output_path = output_path_base + id + ".pkl"
+        output_path = output_path_base + str(file['id']) + ".pkl"
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         with open(output_path, "wb") as f:

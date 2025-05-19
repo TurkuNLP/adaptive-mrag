@@ -5,16 +5,11 @@ dataset = load_from_disk("/scratch/project_2000539/maryam/fineweb_dataset")
 
 # UUIDs from your results (cleaned to remove angle brackets)
 target_ids = {
-    "<urn:uuid:b661bc06-9425-48a3-990b-ed8cdf93dcb9>",
-    "<urn:uuid:dce2b195-b978-468f-a8f1-59486a7b8340>",
-    "<urn:uuid:de805fbe-a7c9-4436-bdbc-60980db04159>",
-    "<urn:uuid:cda9e1fb-722e-4a86-b774-a117bdfe2171>",
-    "<urn:uuid:d10aaf0a-9479-4803-9974-0316a807836a>",
-    "<urn:uuid:6fee35ad-ae85-43ec-b57b-b3367be6f892>",
-    "<urn:uuid:5d19ca73-bc1b-44f8-8316-84154f0d17d8>",
-    "<urn:uuid:a6f89f97-77ec-4701-b616-b8cc74c8e0ed>",
-    "<urn:uuid:8280daa2-29c5-4b63-8795-63a2ef93bba9>",
-    "<urn:uuid:9e375e75-dd91-4f9b-9c6b-35521022cfd6>",
+    "<urn:uuid:c970d9a2-a5ce-4050-9ea3-58d7bbd609a8>",
+    "<urn:uuid:8ba5fa5a-1f92-4f5a-95e3-85dbb7befbfe>",
+    "<urn:uuid:4ad1d60f-e986-44b4-8b58-e833a6dddba8>",
+    "<urn:uuid:9a56e7c7-5d04-41c9-8c2c-bd8518657d95>",
+    "<urn:uuid:095340b9-8a67-45ac-afb3-250bec8e3efd>",
 }
 
 # Search and print matching texts

@@ -111,7 +111,7 @@ total_docs = 960  # Total documents
 
 cosine_scores_raw = []
 cosine_scores = []
-output_path_base = "FineWeb-embedd-modified/"
+output_path_base = "data/FineWeb-embedd/"
 
 file_counts = 0
 for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
@@ -156,9 +156,37 @@ for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
     flat_embeddings = split_embeddings.reshape(n_samples * num_heads, head_size)
     doc_embedding = flat_embeddings.mean(axis=0, keepdims=True)
 
-    flat_embeddings = np.concatenate([doc_embedding, flat_embeddings], axis=0)
+
+    # Reshape into (num_heads, n_samples, head_size)
+    transposed = np.transpose(split_embeddings, (1, 0, 2))  # shape: (num_heads, n_samples, head_size)
+    head_embeddings = transposed.mean(axis=1)  # shape: (num_heads, head_size)
+    head_magnitudes = np.linalg.norm(head_embeddings, axis=1)  # shape: (num_heads,)
+    weighted_doc_embedding = np.sum(head_embeddings * head_magnitudes[:, np.newaxis], axis=0, keepdims=True)  # shape: (1, head_size)
+
+    final_embeddings = np.concatenate([doc_embedding, weighted_doc_embedding], axis=0)
+
+    exclude_heads = {0, 7, 8, 17, 18, 21}
+    split_embeddings[:, list(exclude_heads), :] = 0
+
+    # Reshape into (num_heads, n_samples, head_size)
+    transposed = np.transpose(split_embeddings, (1, 0, 2))  # shape: (num_heads, n_samples, head_size)
+
+    # Mean per head across tokens
+    head_embeddings = transposed.mean(axis=1)  # shape: (num_heads, head_size)
+
+    # Compute L2 norm for each head
+    head_magnitudes = np.linalg.norm(head_embeddings, axis=1)  # shape: (num_heads,)
+
+    # Optional: Normalize weights to sum to 1
+    #weights = head_magnitudes / (np.sum(head_magnitudes) + 1e-10)  # shape: (num_heads,)
+
+    # Create weighted document embedding
+    weighted_doc_embedding = np.sum(head_embeddings * head_magnitudes[:, np.newaxis], axis=0, keepdims=True)  # shape: (1, head_size)
+
+    final_embeddings = np.concatenate([final_embeddings, weighted_doc_embedding], axis=0)
+
     # Compute Cosine Similarity (Title vs. Each Head)
-    similarities = cosine_similarity(title_embedding, flat_embeddings)[0]  # Shape: (n_samples * num_heads,)
+    similarities = cosine_similarity(title_embedding, final_embeddings)[0]  # Shape: (n_samples * num_heads,)
 
     # Inside the loop instead of appending full similarities directly:
     doc_similarity = similarities[0]
@@ -187,11 +215,11 @@ for topic, count in topic_counts.items():
     tick_position += count
     topic_boundaries.append(tick_position)
 
-yticklabels = ["full embd"] + [f"Head {i}" for i in range(1, num_heads + 1)]
+yticklabels = ["full embd"] + ["weighted"] + ["weighted with 0"]
 
 # Plot heatmap
-plt.figure(figsize=(20, 10)) # cmap="Reds"
-sns.heatmap(cosine_scores, cmap="coolwarm", yticklabels=yticklabels)
+plt.figure(figsize=(20, 4)) # cmap="Reds"
+sns.heatmap(cosine_scores, cmap="coolwarm", yticklabels=yticklabels, vmin=-0.35)
 
 # Custom x-ticks in the middle of each topic group
 positions, labels = zip(*x_ticks)
@@ -206,6 +234,6 @@ plt.ylabel("Vector Embedding Heads")
 plt.title("Heatmap of Cosine Similarity Between Title and Text Attention Heads")
 
 # Show plot
-plt.savefig("fineweb_heatmap_topics.png", dpi=300, bbox_inches="tight")
+plt.savefig("fineweb_heatmap_topics_full_weighted.png", dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()

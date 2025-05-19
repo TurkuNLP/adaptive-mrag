@@ -2,8 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import torch
-import json
-import re
+from datasets import load_from_disk
 import pickle
 from transformers import AutoTokenizer, AutoModel
 from collections import Counter
@@ -17,46 +16,22 @@ cache_dir = "/scratch/project_2000539/maryam/embed/.cache"
 tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
 model = AutoModel.from_pretrained(model_name, cache_dir=cache_dir, torch_dtype=torch.float16).cuda()
 
-def clean_label(label):
-    # 1. Replace any comma between number and text with a dot
-    label = re.sub(r'^(\d+)[,.]', r'\1.', label.strip())
-
-    # 2. Remove everything after the presence of a second number
-    #    e.g., "1. Technology 2. Gaming" -> "1. Technology"
-    match = re.match(r'^(\d+\.\s*[^0-9]*)', label)
-    if match:
-        label = match.group(1).strip()
-
-    # 3. Remove any trailing punctuation like comma or period
-    label = re.sub(r'[,.]\s*$', '', label)
-
-    # 4. Make sure only the first dot remains (fix cases like 1.. Technology)
-    label = re.sub(r'^(\d+)\.+', r'\1.', label)
-
-    # 5. Remove extra whitespace around the dot and category
-    label = re.sub(r'\s*\.\s*', '.', label)
-    label = re.sub(r'\s+', ' ', label)
-
-    return label.strip()
 
 # Load Dataset
-with open("data/classified_topics_narrowed.jsonl", "r", encoding="utf-8") as f:
-    dataset = [json.loads(line) for line in f]
-
-for doc in dataset:
-    doc["topic"] = clean_label(doc["topic"])
+dataset_original = load_from_disk("/scratch/project_2000539/maryam/mtop_domain/de")
+dataset = list(dataset_original)
 
 # Count topic occurrences
-topic_counts = Counter(doc["topic"] for doc in dataset)
+topic_counts = Counter(doc["label_text"] for doc in dataset)
 
 # Sort dataset by most repeated topics
-dataset.sort(key=lambda x: topic_counts[x["topic"]], reverse=True)
+dataset.sort(key=lambda x: topic_counts[x["label_text"]], reverse=True)
 
 # Keep only up to 120 docs per topic
 max_per_topic = 120
 topic_seen = defaultdict(int)
-dataset = [doc for doc in dataset if topic_seen[doc["topic"]] <
-           max_per_topic and not topic_seen.__setitem__(doc["topic"], topic_seen[doc["topic"]] + 1)]
+dataset = [doc for doc in dataset if topic_seen[doc["label_text"]] <
+           max_per_topic and not topic_seen.__setitem__(doc["label_text"], topic_seen[doc["label_text"]] + 1)]
 
 def last_token_pool(last_hidden_states: Tensor,
                  attention_mask: Tensor) -> Tensor:
@@ -76,47 +51,17 @@ def get_embeddings(text):
         outputs = model(**inputs)
     return outputs.last_hidden_state, inputs.attention_mask  # (batch_size, seq_length, hidden_size)
 
-def sort_docs_by_topic_similarity(cosine_scores_raw, min_docs_per_topic=10):
-
-    topic_docs = defaultdict(list)
-
-    for doc_similarity, head_similarities, topic in cosine_scores_raw:
-        topic_docs[topic].append((doc_similarity, head_similarities))
-
-    sorted_cosine_scores = []
-    topic_order = []
-    topic_boundaries = []
-    current_index = 0
-
-    for topic, docs in topic_docs.items():
-        if len(docs) < min_docs_per_topic:
-            continue
-        # Sort by doc-level similarity
-        sorted_docs = sorted(docs, key=lambda x: x[0], reverse=True)
-
-        for sim, head_sim in sorted_docs:
-            sorted_cosine_scores.append(np.concatenate([[sim], head_sim]))
-            topic_order.append(topic)
-
-        current_index += len(sorted_docs)
-        topic_boundaries.append(current_index)
-
-    cosine_scores_sorted = np.array(sorted_cosine_scores).T  # shape: (num_heads+1, total_docs)
-
-    return cosine_scores_sorted, topic_order, topic_boundaries
-
 # Process Documents
 num_heads = 32  # Define the number of attention heads
 total_docs = 960  # Total documents
 
-cosine_scores_raw = []
 cosine_scores = []
-output_path_base = "FineWeb-embedd-modified/"
+output_path_base = "data/mtop_domain/de/"
 
 file_counts = 0
 for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
 
-    title = doc["topic"]  # Using text as the title since JSONL does not have a separate title field
+    title = doc["label_text"]  # Using text as the title since JSONL does not have a separate title field
     file_counts += 1
 
     # Get Title Embeddings (Mean Pooling)
@@ -129,7 +74,7 @@ for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
     title_embedding = title_embedding.reshape(num_heads, head_size).mean(axis=0, keepdims=True)  # Shape: (1, 128)
 
 
-    id = ''.join(re.findall(r'[\d-]+', doc['id']))
+    id = str(doc['id'])
     output_path = output_path_base + id + ".pkl"
 
     all_embd = []
@@ -163,18 +108,25 @@ for doc in dataset[:total_docs]:  # Assuming dataset is loaded from JSONL
     # Inside the loop instead of appending full similarities directly:
     doc_similarity = similarities[0]
     head_similarities = similarities[1:]
-    cosine_scores_raw.append((doc_similarity, head_similarities, doc["topic"]))
 
-    #cosine_scores.append(similarities)
+    cosine_scores.append(similarities)
 
 # Convert to NumPy Array for Visualization
-#cosine_scores = np.array(cosine_scores).T  # Shape: (num_heads, num_docs)
+cosine_scores = np.array(cosine_scores).T  # Shape: (num_heads, num_docs)
+
+# Normalize each head's similarities to [0, 1]
+normalized_scores = []
+
+for head_scores in cosine_scores:
+    min_val = np.min(head_scores)
+    max_val = np.max(head_scores)
+    norm = (head_scores - min_val) / (max_val - min_val + 1e-9)  # Avoid division by zero
+    normalized_scores.append(norm)
 
 # Count how many docs per topic (in order of appearance)
-topic_order = [doc["topic"] for doc in dataset[:total_docs]]
+topic_order = [doc["label_text"] for doc in dataset[:total_docs]]
 topic_counts = Counter(topic_order)
 topic_boundaries = []
-cosine_scores, topic_order, topic_boundaries = sort_docs_by_topic_similarity(cosine_scores_raw)
 
 # Preserve order and build x_labels
 x_ticks = []
@@ -187,11 +139,9 @@ for topic, count in topic_counts.items():
     tick_position += count
     topic_boundaries.append(tick_position)
 
-yticklabels = ["full embd"] + [f"Head {i}" for i in range(1, num_heads + 1)]
-
 # Plot heatmap
 plt.figure(figsize=(20, 10)) # cmap="Reds"
-sns.heatmap(cosine_scores, cmap="coolwarm", yticklabels=yticklabels)
+sns.heatmap(cosine_scores, cmap="coolwarm", yticklabels=[f"Head {i}" for i in range(num_heads + 1)])
 
 # Custom x-ticks in the middle of each topic group
 positions, labels = zip(*x_ticks)
@@ -206,6 +156,6 @@ plt.ylabel("Vector Embedding Heads")
 plt.title("Heatmap of Cosine Similarity Between Title and Text Attention Heads")
 
 # Show plot
-plt.savefig("fineweb_heatmap_topics.png", dpi=300, bbox_inches="tight")
+plt.savefig("mtop_heatmap_topics.png", dpi=300, bbox_inches="tight")
 plt.show()
 plt.close()

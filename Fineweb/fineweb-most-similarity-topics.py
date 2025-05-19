@@ -28,7 +28,12 @@ def get_embeddings(text):
     inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True, max_length=512).to("cuda")
     with torch.no_grad():
         outputs = model(**inputs)
-    return last_token_pool(outputs.last_hidden_state, inputs['attention_mask']).cpu().numpy()
+    pooled = last_token_pool(outputs.last_hidden_state, inputs['attention_mask']).cpu().numpy()
+    head_size = pooled.shape[1] // 32  # 4096 / 32 = 128
+    split = pooled.reshape(32, head_size)  # shape: (32, 128)
+    mean_emb = split.mean(axis=0, keepdims=True)  # shape: (1, 128)
+
+    return mean_emb
 
 def clean_label(label):
     # 1. Replace any comma between number and text with a dot
@@ -74,7 +79,8 @@ for topic in unique_topics:
     topic_embeddings[topic] = get_embeddings(topic)  # shape: (1, hidden_size)
 
 # === Compute Document Embeddings and Compare to Topics ===
-output_path_base = "data/FineWeb-embedd/"
+output_path_base = "FineWeb-embedd-modified/"
+num_heads = 32
 most_similar_topics = []
 max_similarities = []
 
@@ -99,10 +105,32 @@ for idx, doc in enumerate(dataset):
         max_similarities.append(None)
         continue
 
-    doc_embedding = all_embd.mean(axis=0, keepdims=True)  # shape: (1, hidden_size)
+    n_samples = all_embd.shape[0]
+    head_size = all_embd.shape[1] // num_heads
+    split_embeddings = all_embd.reshape(n_samples, num_heads, head_size)
+
+    flat_embeddings = split_embeddings.reshape(n_samples * num_heads, head_size)
+    doc_embedding = flat_embeddings.mean(axis=0, keepdims=True)
+
+    exclude_heads = {0, 7, 8, 17, 18, 21}
+    #split_embeddings[:, list(exclude_heads), :] = 0
+
+    # Reshape into (num_heads, n_samples, head_size)
+    transposed = np.transpose(split_embeddings, (1, 0, 2))  # shape: (num_heads, n_samples, head_size)
+
+    # Mean per head across tokens
+    head_embeddings = transposed.mean(axis=1)  # shape: (num_heads, head_size)
+
+    # Compute L2 norm for each head
+    head_magnitudes = np.linalg.norm(head_embeddings, axis=1)  # shape: (num_heads,)
+
+    # Create weighted document embedding
+    weighted_doc_embedding = np.sum(head_embeddings * head_magnitudes[:, np.newaxis], axis=0, keepdims=True)  # shape: (1, head_size)
+
+    #doc_embedding = all_embd.mean(axis=0, keepdims=True)  # shape: (1, hidden_size)
 
     sims = {
-        topic: cosine_similarity(topic_emb, doc_embedding)[0][0]
+        topic: cosine_similarity(topic_emb, weighted_doc_embedding)[0][0]
         for topic, topic_emb in topic_embeddings.items()
     }
 
@@ -143,12 +171,26 @@ for idx in valid_indices:
                 except EOFError:
                     break
         all_embd = np.concatenate(all_embd, axis=0)
-        doc_embedding = all_embd.mean(axis=0, keepdims=True)
+        n_samples = all_embd.shape[0]
+        head_size = all_embd.shape[1] // num_heads
+        split_embeddings = all_embd.reshape(n_samples, num_heads, head_size)
+
+        flat_embeddings = split_embeddings.reshape(n_samples * num_heads, head_size)
+        doc_embedding = flat_embeddings.mean(axis=0, keepdims=True)
+
+        exclude_heads = {0, 7, 8, 17, 18, 21}
+        #split_embeddings[:, list(exclude_heads), :] = 0
+
+        transposed = np.transpose(split_embeddings, (1, 0, 2))  # shape: (num_heads, n_samples, head_size)
+        head_embeddings = transposed.mean(axis=1)  # shape: (num_heads, head_size)
+        head_magnitudes = np.linalg.norm(head_embeddings, axis=1)  # shape: (num_heads,)
+        weighted_doc_embedding = np.sum(head_embeddings * head_magnitudes[:, np.newaxis], axis=0, keepdims=True)  # shape: (1, head_size)
+
     except FileNotFoundError:
         continue
 
     sims = {
-        topic: cosine_similarity(topic_emb, doc_embedding)[0][0]
+        topic: cosine_similarity(topic_emb, weighted_doc_embedding)[0][0]
         for topic, topic_emb in topic_embeddings.items()
     }
 

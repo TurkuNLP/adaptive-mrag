@@ -158,14 +158,15 @@ def visualize_embedding_specific_heads_with_magnitude_shading(embeddings, specif
     return tops
 
 all_embd = []
-directory_path = "FineWeb-embedd2"
+directory_path = "FineWeb-embedd-modified"
+"""
 all_txt = []
 print("loading from disk")
 dataset = load_from_disk("/scratch/project_2000539/maryam/fineweb_dataset")
-
+"""
 for file_index, filename in enumerate(os.listdir(directory_path)):
 
-    all_txt.append(dataset[file_index]['text'])
+    #all_txt.append(dataset[file_index]['text'])
     with open(os.path.join(directory_path, filename), "rb") as f:
         while True:
             try:
@@ -193,14 +194,14 @@ print(len(all_embd[0]))
 #print(len(all_embd[0][0]))
 
 #visualize_embedding_heads(all_embd, method='tsne', ax=None)
-#print("visualize_embedding_specific_heads_with_magnitude_shading")
-#visualize_embedding_heads_with_magnitude_shading(all_embd, method='tsne', ax=None)
+print("visualize_embedding_specific_heads_with_magnitude_shading")
+visualize_embedding_heads_with_magnitude_shading(all_embd, method='tsne', ax=None)
 
 heads = [3,13,26]
 print("visualize_embedding_specific_heads_with_magnitude_shading")
 tops_and_lows = visualize_embedding_specific_heads_with_magnitude_shading(all_embd,heads, method='tsne', ax=None)
-all_txt = np.array(all_txt)
+"""all_txt = np.array(all_txt)
 for head_idx, (top_5, low_5) in enumerate(tops_and_lows):
     print("head: ", heads[head_idx])
     print("Top 5: ", all_txt[top_5])
-    print("Low 5: ", all_txt[low_5])
+    print("Low 5: ", all_txt[low_5])"""
