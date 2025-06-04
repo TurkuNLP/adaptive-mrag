@@ -1,0 +1,15 @@
+
+Head 18 — Top & Bottom 5 cosine similarities for topic: '5.Sports, Teams, Games, News'
+Top 5 (highest similarity):
+Doc ID: <urn:uuid:8ed0ed26-36d8-47f7-9bbd-e52bff033844>, Similarity: -0.0612
+Doc ID: <urn:uuid:428f48b0-fae2-4dba-bbf2-30188674d4d9>, Similarity: -0.0770
+Doc ID: <urn:uuid:b922cb67-717a-4239-91dc-688c9d7eb2e5>, Similarity: -0.1301
+Doc ID: <urn:uuid:774fe55a-c4fb-4c65-b059-fd7c4fd34f12>, Similarity: -0.1358
+Doc ID: <urn:uuid:353c7145-58df-4f68-9960-1de909e7b6e3>, Similarity: -0.1373
+
+Bottom 5 (lowest similarity):
+Doc ID: <urn:uuid:df80cc35-797c-40c4-bc58-0b2aab78dec8>, Similarity: -0.2274
+Doc ID: <urn:uuid:7dc036af-0333-4edd-8641-853bc97078a5>, Similarity: -0.2201
+Doc ID: <urn:uuid:44ed5cb7-ca08-41c0-9930-0f0fd058d501>, Similarity: -0.2178
+Doc ID: <urn:uuid:cea2082e-3857-44a3-b937-9946d96a1847>, Similarity: -0.2127
+Doc ID: <urn:uuid:ddca3392-798a-45de-a45e-a156966cb571>, Similarity: -0.2089

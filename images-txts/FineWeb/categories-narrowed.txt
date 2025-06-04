@@ -1,0 +1,25 @@
+1. Business, Finance, Law
+2. Entertainment, Film, Theater, Music, Arts
+3. Places, Travel, Real Estate
+4. Food, Summer, Recipes
+5. Sports, Teams, Games, News
+6. Personal, Family, Leisure
+7. Fashion, Clothing, Accessories, Jewelry, Shopping
+8. Crime, Law, Police
+9. Gaming, Technology, Games, Gadgets, Innovation
+10. Cars, Automotive, Industry
+11. Literature, War, Fantasy
+12. Crafts, Personal, Journaling
+13. Furniture, Architecture, Design
+14. Politics, Conflict, International
+15. Technology, Support, Marketing
+16. Dating, Relationships, Places
+17. Math, Formulae, Education, Teaching, Learning
+18. Health, Nutrition, Diet, Medicine, Diseases, Biology
+19. Plants, Gardening, Nature
+20. History, War, Military
+21. Philosophy, Religion, Spirituality
+22. Space, Astronomy, Science
+23. Energy, Environment, Weather, Climate, Science, Water
+24. Wildlife, Animals
+25. History, Culture, Royalty
